@@ -12,7 +12,6 @@ import {
   Platform,
 } from "react-native";
 import SafeAreaView from "react-native-safe-area-view";
-import DatePicker from "react-native-date-picker";
 import * as ImagePicker from "expo-image-picker";
 import * as MediaLibrary from "expo-media-library";
 import * as Location from "expo-location";
@@ -21,12 +20,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Home({ navigation }) {
   const [consent, setConsent] = useState(false);
-  const [date, setDate] = useState(new Date());
-  const [open, setOpen] = useState(false);
+  const [date, setDate] = useState(new Date().toDateString());
   const [givenName, setGivenName] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [status, requestPermission] = MediaLibrary.usePermissions();
-  const [location, setLocation] = useState(null);
+  //   const [location, setLocation] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
   const [locationStatus, setLocationStatus] = useState("Waiting...");
   const [comments, setComments] = useState("");
@@ -46,10 +44,12 @@ export default function Home({ navigation }) {
       if (validateData) {
         const jsonValue = JSON.stringify(data);
         await AsyncStorage.setItem("rockside_form_data", jsonValue);
+        alert("Your data has been saved successfully.");
       } else alert("Make sure all the data has been entered correctly.");
     } catch (e) {
       // saving error
       console.log("Error saving data", e);
+      alert("An error occurred while saving your data.");
     }
   };
 
@@ -72,18 +72,7 @@ export default function Home({ navigation }) {
     requestPermission();
   }
 
-  //   Save selected image to device storage
-  const onSaveImageAsync = async () => {
-    try {
-      await MediaLibrary.saveToLibraryAsync(selectedImage);
-      if (selectedImage) {
-        alert("Saved!");
-      }
-    } catch (e) {
-      console.log(e);
-    }
-  };
-
+  let location = null;
   //   If permission granted, get device location
   useEffect(() => {
     (async () => {
@@ -93,8 +82,8 @@ export default function Home({ navigation }) {
         return;
       }
 
-      let location = await Location.getCurrentPositionAsync({});
-      setLocation(location);
+      location = await Location.getCurrentPositionAsync({});
+      //   setLocation(location);
       console.log("location", location);
     })();
   }, []);
@@ -103,7 +92,12 @@ export default function Home({ navigation }) {
   if (errorMsg) {
     setLocationStatus(errorMsg);
   } else if (location) {
-    let text = JSON.stringify(location);
+    // let text = JSON.stringify(location);
+    let text =
+      "latitude: " +
+      location?.coords?.latitude +
+      ", longitude: " +
+      location?.coords?.longitude;
     setLocationStatus(text);
   }
 
@@ -111,6 +105,17 @@ export default function Home({ navigation }) {
     if (consent && date && givenName.length > 2 && selectedImage && location)
       return true;
     else return false;
+  };
+
+  //   Clear local storage and go to sign up screen
+  const logOut = async () => {
+    try {
+      await AsyncStorage.clear();
+      navigation.navigate("SignUp");
+    } catch (e) {
+      // clear error
+      console.log("Error clearing local storage", e);
+    }
   };
 
   return (
@@ -151,27 +156,10 @@ export default function Home({ navigation }) {
           {consent ? (
             <View>
               <Text style={styles.label}>Registration date</Text>
-              <Pressable
-                style={styles.imgPickerBtn}
-                onPress={() => setOpen(true)}
-              >
-                <Text>Pick a date</Text>
-              </Pressable>
-              <DatePicker
-                modal
-                open={open}
-                date={date}
-                mode={"date"}
-                textColor={"#333"}
-                theme={"auto"}
-                androidVariant="iosClone"
-                onConfirm={(date) => {
-                  setOpen(false);
-                  setDate(date);
-                }}
-                onCancel={() => {
-                  setOpen(false);
-                }}
+              <TextInput
+                style={styles.textInput}
+                value={date}
+                editable={false}
               />
 
               <Text style={styles.label}>Respondent name</Text>
@@ -206,7 +194,7 @@ export default function Home({ navigation }) {
               <Text style={styles.label}>
                 Respondent compound shape and size
               </Text>
-              <MapView style={styles.map} />
+              <MapView style={styles.map} coords={location?.coords} />
 
               <Text style={styles.label}>Comments (Optional)</Text>
               <TextInput
@@ -226,10 +214,7 @@ export default function Home({ navigation }) {
             </View>
           ) : null}
 
-          <Pressable
-            style={styles.logoutContainer}
-            onPress={() => navigation.navigate("SignIn")}
-          >
+          <Pressable style={styles.logoutContainer} onPress={() => logOut()}>
             <Text style={styles.textBtn}>Logout and reset credentials</Text>
           </Pressable>
 
@@ -315,7 +300,7 @@ const styles = StyleSheet.create({
   photo: {
     width: 150,
     height: 150,
-    borderRadius: 50,
+    borderRadius: 75,
     marginTop: 20,
   },
   locationText: {
@@ -323,9 +308,10 @@ const styles = StyleSheet.create({
   },
   map: {
     alignSelf: "center",
-    width: 200,
-    height: 200,
+    width: 250,
+    height: 250,
     borderRadius: 7,
+    marginTop: 20,
   },
   textInput: {
     backgroundColor: "#eee",

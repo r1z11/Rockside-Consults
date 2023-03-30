@@ -20,7 +20,7 @@ export default function SignIn({ navigation }) {
   //   Get credentials from local storage
   const getData = async () => {
     try {
-      const value = await AsyncStorage.getItem("@rockside_auth_data");
+      const value = await AsyncStorage.getItem("rockside_auth_data");
       if (value !== null) {
         // value previously stored
         const data = JSON.parse(value);
