@@ -24,7 +24,7 @@ export default function Home({ navigation }) {
   const [givenName, setGivenName] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [status, requestPermission] = MediaLibrary.usePermissions();
-  //   const [location, setLocation] = useState(null);
+  const [location, setLocation] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
   const [locationStatus, setLocationStatus] = useState("Waiting...");
   const [comments, setComments] = useState("");
@@ -72,33 +72,29 @@ export default function Home({ navigation }) {
     requestPermission();
   }
 
-  let location = null;
+  //   let location = null;
   //   If permission granted, get device location
   useEffect(() => {
     (async () => {
+      
       let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        setErrorMsg("Permission to access location was denied");
+      if (status !== 'granted') {
+        setErrorMsg('Permission to access location was denied');
         return;
       }
 
-      location = await Location.getCurrentPositionAsync({});
-      //   setLocation(location);
+      let location = await Location.getCurrentPositionAsync({});
+      setLocation(location);
       console.log("location", location);
     })();
   }, []);
 
   //   Update location status
+  let text = 'Waiting..';
   if (errorMsg) {
-    setLocationStatus(errorMsg);
+    text = errorMsg;
   } else if (location) {
-    // let text = JSON.stringify(location);
-    let text =
-      "latitude: " +
-      location?.coords?.latitude +
-      ", longitude: " +
-      location?.coords?.longitude;
-    setLocationStatus(text);
+    text = JSON.stringify(location);
   }
 
   const validateData = () => {
@@ -189,7 +185,7 @@ export default function Home({ navigation }) {
               ) : null}
 
               <Text style={styles.label}>Respondent location</Text>
-              <Text style={styles.locationText}>{locationStatus}</Text>
+              <Text style={styles.locationText}>{text}</Text>
 
               <Text style={styles.label}>
                 Respondent compound shape and size
