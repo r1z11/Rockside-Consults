@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "RocksideConsults",
+    "name": "Rockside Consults",
     "slug": "RocksideConsults",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -21,7 +21,13 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.FOREGROUND_SERVICE"
+      ],
+      "package": "com.es16297.RocksideConsults"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -33,6 +39,13 @@
           "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
         }
       ]
-    ]
+    ],
+    "description": "React native app for technical assessment",
+    "githubUrl": "https://github.com/r1z11/Rockside-Consults",
+    "extra": {
+      "eas": {
+        "projectId": "a85290f3-aa2f-40d8-b1ec-339a205ec3fc"
+      }
+    }
   }
 }
