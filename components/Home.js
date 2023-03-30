@@ -26,7 +26,6 @@ export default function Home({ navigation }) {
   const [status, requestPermission] = MediaLibrary.usePermissions();
   const [location, setLocation] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
-  const [locationStatus, setLocationStatus] = useState("Waiting...");
   const [comments, setComments] = useState("");
 
   // Save form data
@@ -72,14 +71,12 @@ export default function Home({ navigation }) {
     requestPermission();
   }
 
-  //   let location = null;
   //   If permission granted, get device location
   useEffect(() => {
     (async () => {
-      
       let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setErrorMsg('Permission to access location was denied');
+      if (status !== "granted") {
+        setErrorMsg("Permission to access location was denied");
         return;
       }
 
@@ -90,7 +87,7 @@ export default function Home({ navigation }) {
   }, []);
 
   //   Update location status
-  let text = 'Waiting..';
+  let text = "Waiting..";
   if (errorMsg) {
     text = errorMsg;
   } else if (location) {
@@ -112,6 +109,43 @@ export default function Home({ navigation }) {
       // clear error
       console.log("Error clearing local storage", e);
     }
+  };
+
+  //   Get form data from local storage
+  const getData = async () => {
+    try {
+      const formData = await AsyncStorage.getItem("rockside_form_data");
+      if (formData !== null) {
+        // value previously stored
+        const data = JSON.parse(formData);
+        return data;
+      }
+    } catch (e) {
+      // error reading value
+      console.log("Error getting local form data", e);
+    }
+  };
+
+  //   Get form data from local storage when the component mounts
+    useEffect(() => {
+      (async () => {
+        let data = await getData();
+        console.log("form data", data);
+
+        if (data) {
+          setConsent(data?.consent);
+          setDate(data?.date);
+          setGivenName(data?.name);
+          setSelectedImage(data?.photo);
+          setLocation(data?.location);
+          setComments(data?.comments);
+        }
+      })();
+    }, []);
+
+  //   Update map location when device location changes
+  onRegionChange = (location) => {
+    setLocation({ location });
   };
 
   return (
@@ -190,7 +224,17 @@ export default function Home({ navigation }) {
               <Text style={styles.label}>
                 Respondent compound shape and size
               </Text>
-              <MapView style={styles.map} coords={location?.coords} />
+              <MapView
+                style={styles.map}
+                initialRegion={{
+                  latitude: location?.coords?.latitude,
+                  longitude: location?.coords?.longitude,
+                  latitudeDelta: 0.0922,
+                  longitudeDelta: 0.0421,
+                }}
+                // region={location}
+                // onRegionChange={onRegionChange()}
+              />
 
               <Text style={styles.label}>Comments (Optional)</Text>
               <TextInput

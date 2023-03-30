@@ -28,9 +28,10 @@ export default function SignIn({ navigation }) {
       }
     } catch (e) {
       // error reading value
-      console.log("Error getting local data", e);
+      console.log("Error getting local auth data", e);
     }
   };
+
   //   Get credentials from local storage when the component mounts
   useEffect(() => {
     (async () => {
