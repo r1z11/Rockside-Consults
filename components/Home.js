@@ -16,6 +16,8 @@ import DatePicker from "react-native-date-picker";
 import * as ImagePicker from "expo-image-picker";
 import * as MediaLibrary from "expo-media-library";
 import * as Location from "expo-location";
+import MapView from "react-native-maps";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Home({ navigation }) {
   const [consent, setConsent] = useState(false);
@@ -26,11 +28,30 @@ export default function Home({ navigation }) {
   const [status, requestPermission] = MediaLibrary.usePermissions();
   const [location, setLocation] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
-  const [locationStatus, setLocationStatus] = useState('Waiting...');
+  const [locationStatus, setLocationStatus] = useState("Waiting...");
   const [comments, setComments] = useState("");
 
-  // Handle form submission
-  const handleSubmit = () => {};
+  // Save form data
+  const storeData = async () => {
+    let data = {
+      consent,
+      date,
+      name: givenName,
+      photo: selectedImage,
+      location,
+      comments,
+    };
+
+    try {
+      if (validateData) {
+        const jsonValue = JSON.stringify(data);
+        await AsyncStorage.setItem("rockside_form_data", jsonValue);
+      } else alert("Make sure all the data has been entered correctly.");
+    } catch (e) {
+      // saving error
+      console.log("Error saving data", e);
+    }
+  };
 
   //   Handle the image picker
   const pickImageAsync = async () => {
@@ -74,16 +95,23 @@ export default function Home({ navigation }) {
 
       let location = await Location.getCurrentPositionAsync({});
       setLocation(location);
+      console.log("location", location);
     })();
   }, []);
 
-//   Update location status
+  //   Update location status
   if (errorMsg) {
     setLocationStatus(errorMsg);
   } else if (location) {
     let text = JSON.stringify(location);
     setLocationStatus(text);
   }
+
+  const validateData = () => {
+    if (consent && date && givenName.length > 2 && selectedImage && location)
+      return true;
+    else return false;
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -123,24 +151,28 @@ export default function Home({ navigation }) {
           {consent ? (
             <View>
               <Text style={styles.label}>Registration date</Text>
-              <View style={styles.datePicker}>
-                <DatePicker
-                  modal
-                  open={open}
-                  date={date}
-                  mode={"date"}
-                  textColor={"#333"}
-                  theme={"auto"}
-                  androidVariant="iosClone"
-                  onConfirm={(date) => {
-                    setOpen(false);
-                    setDate(date);
-                  }}
-                  onCancel={() => {
-                    setOpen(false);
-                  }}
-                />
-              </View>
+              <Pressable
+                style={styles.imgPickerBtn}
+                onPress={() => setOpen(true)}
+              >
+                <Text>Pick a date</Text>
+              </Pressable>
+              <DatePicker
+                modal
+                open={open}
+                date={date}
+                mode={"date"}
+                textColor={"#333"}
+                theme={"auto"}
+                androidVariant="iosClone"
+                onConfirm={(date) => {
+                  setOpen(false);
+                  setDate(date);
+                }}
+                onCancel={() => {
+                  setOpen(false);
+                }}
+              />
 
               <Text style={styles.label}>Respondent name</Text>
               <TextInput
@@ -174,15 +206,7 @@ export default function Home({ navigation }) {
               <Text style={styles.label}>
                 Respondent compound shape and size
               </Text>
-              <TextInput
-                autoCapitalize="none"
-                autoCompleteType="password"
-                autoCorrect={false}
-                returnKeyType="done"
-                style={styles.textInput}
-                textContentType="none"
-                placeholder="Name"
-              />
+              <MapView style={styles.map} />
 
               <Text style={styles.label}>Comments (Optional)</Text>
               <TextInput
@@ -196,10 +220,7 @@ export default function Home({ navigation }) {
                 value={comments}
               />
 
-              <Pressable
-                style={styles.btn}
-                onPress={() => navigation.navigate("SignUp")}
-              >
+              <Pressable style={styles.btn} onPress={() => storeData()}>
                 <Text style={styles.btnText}>Save</Text>
               </Pressable>
             </View>
@@ -209,7 +230,7 @@ export default function Home({ navigation }) {
             style={styles.logoutContainer}
             onPress={() => navigation.navigate("SignIn")}
           >
-            <Text style={styles.textBtn}>Logout</Text>
+            <Text style={styles.textBtn}>Logout and reset credentials</Text>
           </Pressable>
 
           <StatusBar style="auto" />
@@ -292,13 +313,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   photo: {
-    width: 100,
-    height: 100,
+    width: 150,
+    height: 150,
     borderRadius: 50,
     marginTop: 20,
   },
   locationText: {
     marginTop: 20,
+  },
+  map: {
+    alignSelf: "center",
+    width: 200,
+    height: 200,
+    borderRadius: 7,
   },
   textInput: {
     backgroundColor: "#eee",
