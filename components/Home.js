@@ -15,7 +15,7 @@ import SafeAreaView from "react-native-safe-area-view";
 import * as ImagePicker from "expo-image-picker";
 import * as MediaLibrary from "expo-media-library";
 import * as Location from "expo-location";
-import MapView from "react-native-maps";
+import { Circle, MapView, Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Home({ navigation }) {
@@ -43,6 +43,7 @@ export default function Home({ navigation }) {
       if (validateData) {
         const jsonValue = JSON.stringify(data);
         await AsyncStorage.setItem("rockside_form_data", jsonValue);
+        console.log("saved", jsonValue);
         alert("Your data has been saved successfully.");
       } else alert("Make sure all the data has been entered correctly.");
     } catch (e) {
@@ -71,18 +72,39 @@ export default function Home({ navigation }) {
     requestPermission();
   }
 
-  //   If permission granted, get device location
   useEffect(() => {
     (async () => {
+      // Get previous form data from local storage if it exists
+      let data = await getData();
+      console.log("form data json", data);
+
+      if (data) {
+        setConsent(data?.consent);
+        setDate(data?.date);
+        setGivenName(data?.name);
+        setSelectedImage(data?.photo);
+        setLocation(data?.location);
+        setComments(data?.comments);
+      }
+
+      //   If permission granted, get device location when the component mounts
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
         setErrorMsg("Permission to access location was denied");
         return;
       }
 
-      let location = await Location.getCurrentPositionAsync({});
-      setLocation(location);
-      console.log("location", location);
+      console.log("before getting location", location);
+      //   Get current position
+      let _location = await Location.getCurrentPositionAsync({});
+      console.log("before location update", _location);
+      //   Update location
+      try {
+        setLocation(_location);
+        console.log("after location update", _location);
+      } catch (e) {
+        console.log("error updating location state", e);
+      }
     })();
   }, []);
 
@@ -90,10 +112,13 @@ export default function Home({ navigation }) {
   let text = "Waiting..";
   if (errorMsg) {
     text = errorMsg;
+    console.log("location error", text);
   } else if (location) {
     text = JSON.stringify(location);
+    console.log("latest location", text);
   }
 
+  //   Validate all form data
   const validateData = () => {
     if (consent && date && givenName.length > 2 && selectedImage && location)
       return true;
@@ -106,7 +131,7 @@ export default function Home({ navigation }) {
       await AsyncStorage.clear();
       navigation.navigate("SignUp");
     } catch (e) {
-      // clear error
+      // clear storage error
       console.log("Error clearing local storage", e);
     }
   };
@@ -115,7 +140,8 @@ export default function Home({ navigation }) {
   const getData = async () => {
     try {
       const formData = await AsyncStorage.getItem("rockside_form_data");
-      if (formData !== null) {
+
+      if (formData) {
         // value previously stored
         const data = JSON.parse(formData);
         return data;
@@ -124,28 +150,6 @@ export default function Home({ navigation }) {
       // error reading value
       console.log("Error getting local form data", e);
     }
-  };
-
-  //   Get form data from local storage when the component mounts
-    useEffect(() => {
-      (async () => {
-        let data = await getData();
-        console.log("form data", data);
-
-        if (data) {
-          setConsent(data?.consent);
-          setDate(data?.date);
-          setGivenName(data?.name);
-          setSelectedImage(data?.photo);
-          setLocation(data?.location);
-          setComments(data?.comments);
-        }
-      })();
-    }, []);
-
-  //   Update map location when device location changes
-  onRegionChange = (location) => {
-    setLocation({ location });
   };
 
   return (
@@ -224,17 +228,37 @@ export default function Home({ navigation }) {
               <Text style={styles.label}>
                 Respondent compound shape and size
               </Text>
-              <MapView
-                style={styles.map}
-                initialRegion={{
-                  latitude: location?.coords?.latitude,
-                  longitude: location?.coords?.longitude,
-                  latitudeDelta: 0.0922,
-                  longitudeDelta: 0.0421,
-                }}
-                // region={location}
-                // onRegionChange={onRegionChange()}
-              />
+              {location !== null ? (
+                <View style={styles.map}>
+                    {console.log('before rendering mapview', location)}
+                  <MapView
+                    provider={PROVIDER_GOOGLE}
+                    initialRegion={{
+                      latitude: location.coords.latitude,
+                      longitude: location.coords.longitude,
+                      latitudeDelta: 0.0922,
+                      longitudeDelta: 0.0421,
+                    }}
+                  >
+                    <Marker
+                      coordinate={{
+                        latitude: location.coords.latitude,
+                        longitude: location.coords.longitude,
+                      }}
+                    />
+                  </MapView>
+                  <Circle
+                    radius={500}
+                    center={{
+                      latitude: location.coords.latitude,
+                      longitude: location.coords.longitude,
+                    }}
+                    strokeWidth={1}
+                    strokeColor={"rgba(32, 138, 174, .5)"}
+                    fillColor={"rgba(32, 138, 174, .5)"}
+                  />
+                </View>
+              ) : null}
 
               <Text style={styles.label}>Comments (Optional)</Text>
               <TextInput
@@ -347,9 +371,9 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   map: {
-    alignSelf: "center",
-    width: 250,
-    height: 250,
+    alignItems: "center",
+    marginHorizontal: 20,
+    height: 300,
     borderRadius: 7,
     marginTop: 20,
   },
