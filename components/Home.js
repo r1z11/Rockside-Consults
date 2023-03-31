@@ -15,7 +15,7 @@ import SafeAreaView from "react-native-safe-area-view";
 import * as ImagePicker from "expo-image-picker";
 import * as MediaLibrary from "expo-media-library";
 import * as Location from "expo-location";
-import { Circle, MapView, Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, { Circle, Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Home({ navigation }) {
@@ -115,7 +115,7 @@ export default function Home({ navigation }) {
     console.log("location error", text);
   } else if (location) {
     text = JSON.stringify(location);
-    console.log("latest location", text);
+    console.log("no error. latest location", text);
   }
 
   //   Validate all form data
@@ -229,24 +229,23 @@ export default function Home({ navigation }) {
                 Respondent compound shape and size
               </Text>
               {location !== null ? (
-                <View style={styles.map}>
-                    {console.log('before rendering mapview', location)}
-                  <MapView
-                    provider={PROVIDER_GOOGLE}
-                    initialRegion={{
+                <MapView
+                  provider={PROVIDER_GOOGLE}
+                  minZoomLevel={15}
+                  initialRegion={{
+                    latitude: location.coords.latitude,
+                    longitude: location.coords.longitude,
+                    latitudeDelta: 0.0922,
+                    longitudeDelta: 0.0421,
+                  }}
+                  style={styles.map}
+                >
+                  <Marker
+                    coordinate={{
                       latitude: location.coords.latitude,
                       longitude: location.coords.longitude,
-                      latitudeDelta: 0.0922,
-                      longitudeDelta: 0.0421,
                     }}
-                  >
-                    <Marker
-                      coordinate={{
-                        latitude: location.coords.latitude,
-                        longitude: location.coords.longitude,
-                      }}
-                    />
-                  </MapView>
+                  />
                   <Circle
                     radius={500}
                     center={{
@@ -257,7 +256,7 @@ export default function Home({ navigation }) {
                     strokeColor={"rgba(32, 138, 174, .5)"}
                     fillColor={"rgba(32, 138, 174, .5)"}
                   />
-                </View>
+                </MapView>
               ) : null}
 
               <Text style={styles.label}>Comments (Optional)</Text>
@@ -371,10 +370,9 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   map: {
-    alignItems: "center",
-    marginHorizontal: 20,
-    height: 300,
-    borderRadius: 7,
+    width: 260,
+    height: 260,
+    alignSelf: "center",
     marginTop: 20,
   },
   textInput: {
