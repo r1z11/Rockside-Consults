@@ -109,7 +109,7 @@ export default function Home({ navigation }) {
   }, []);
 
   //   Update location status
-  let text = "Waiting..";
+  let text = "Waiting for location..";
   if (errorMsg) {
     text = errorMsg;
     console.log("location error", text);
@@ -163,7 +163,7 @@ export default function Home({ navigation }) {
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.title}>Questionnaire</Text>
+          <Text style={styles.title}>Rockside Questionnaire</Text>
 
           <View style={styles.spacer30} />
 
